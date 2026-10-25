@@ -1,0 +1,9 @@
+{
+  "name": "smart-plant-online-dashboard",
+  "version": "1.0.0",
+  "description": "Private-token server proxy for a Blynk-powered ESP32 Smart Plant dashboard",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.21.2" }
+}
