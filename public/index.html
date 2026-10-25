@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Plant | Live Dashboard</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#17253b;--text:#edf5ff;--muted:#91a5bf;--green:#54e0a3;--blue:#6cb8ff;--orange:#ffbd69;--red:#ff7272}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:radial-gradient(ellipse at 15% 0%,#173b3b 0,transparent 38%),var(--bg);color:var(--text);min-height:100vh}
+.wrap{max-width:1100px;margin:auto;padding:28px 18px 42px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.brand{display:flex;gap:13px;align-items:center}.logo{height:50px;width:50px;border-radius:16px;background:linear-gradient(135deg,#43d9a2,#168b79);display:grid;place-items:center;font-size:26px;box-shadow:0 8px 30px #2ad9a533}.eyebrow{font-size:12px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:800}.title{font-size:clamp(25px,4vw,38px);margin:4px 0}.sub{color:var(--muted);font-size:14px}.pill{padding:9px 13px;border:1px solid #2a4059;border-radius:30px;color:var(--muted);font-size:13px;display:flex;gap:8px;align-items:center}.dot{height:8px;width:8px;border-radius:50%;background:var(--orange)}.dot.live{background:var(--green);box-shadow:0 0 12px #54e0a3}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px}.card{background:linear-gradient(145deg,var(--panel),#101a2b);border:1px solid #22324a;border-radius:22px;padding:21px;box-shadow:0 12px 32px #0002}.label{color:var(--muted);font-size:14px;display:flex;align-items:center;gap:8px}.value{font-size:clamp(32px,5vw,46px);font-weight:750;letter-spacing:-1.5px;margin:20px 0 5px}.unit{font-size:17px;color:var(--muted);font-weight:500;letter-spacing:0}.hint{font-size:12px;color:var(--muted)}.meter{height:7px;border-radius:10px;background:#26364d;margin-top:19px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#38d9a2,#a3f17a);border-radius:10px;transition:width .4s}.controls{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:16px}.control-title{font-size:19px;font-weight:700;margin:0 0 7px}.control-desc{color:var(--muted);font-size:13px;line-height:1.6}.seg{display:flex;gap:8px;margin-top:18px}.btn{border:1px solid #2d435c;background:#1a2a40;color:var(--text);border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.2s}.btn:hover{filter:brightness(1.15)}.btn.active{background:#165b4b;border-color:#2ca77f;color:#bfffe8}.btn.primary{background:var(--green);color:#06251b;border-color:transparent}.btn.danger{background:#51252c;border-color:#8d3c48}.btn:disabled{opacity:.4;cursor:not-allowed}.pump-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:19px}.switch{position:relative;width:58px;height:32px;background:#34445a;border-radius:30px;border:0;cursor:pointer;flex-shrink:0}.switch:after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:white;left:4px;top:4px;transition:.2s}.switch.on{background:#1fbd88}.switch.on:after{left:30px}.switch:disabled{opacity:.35;cursor:not-allowed}.statusbox{margin-top:16px;padding:12px 14px;border-radius:12px;background:#0d1727;color:var(--muted);font-size:13px;line-height:1.5}.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:22px}.error{color:#ffaaaa}.mode-label{display:inline-block;margin-top:12px;padding:5px 9px;border-radius:7px;background:#21374b;color:#c7e7ff;font-size:12px;font-weight:700}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.value{margin:12px 0 4px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo">🌱</div><div><div class="eyebrow">IoT • Live Monitoring</div><h1 class="title">Smart Plant</h1><div class="sub">Your plant, connected and cared for.</div></div></div>
+    <div class="pill"><span id="liveDot" class="dot"></span><span id="connection">Connecting to Blynk…</span></div>
+  </header>
+
+  <section class="grid">
+    <article class="card"><div class="label">🌡️ Air Temperature</div><div class="value"><span id="temperature">--</span><span class="unit"> °C</span></div><div class="hint">Measured by DHT11</div></article>
+    <article class="card"><div class="label">💧 Humidity</div><div class="value"><span id="humidity">--</span><span class="unit"> %</span></div><div class="meter"><div id="humidityBar" class="fill"></div></div></article>
+    <article class="card"><div class="label">🪴 Soil Moisture</div><div class="value"><span id="moisture">--</span><span class="unit"> %</span></div><div class="meter"><div id="moistureBar" class="fill"></div></div><div id="soilHint" class="hint" style="margin-top:10px">Waiting for sensor data</div></article>
+  </section>
+
+  <section class="controls">
+    <article class="card">
+      <h2 class="control-title">Watering mode</h2>
+      <div class="control-desc">Automatic mode starts the pump when soil moisture is 30% or lower and stops it at 60% or higher. Manual mode lets you control the pump yourself.</div>
+      <div class="seg"><button id="manualBtn" class="btn" onclick="setMode('manual')">Manual</button><button id="autoBtn" class="btn" onclick="setMode('auto')">Automatic</button></div>
+      <div id="modeLabel" class="mode-label">Mode: --</div>
+      <div class="statusbox">For safety, switch to Manual before using the pump toggle. Do not run a water pump dry.</div>
+    </article>
+    <article class="card">
+      <h2 class="control-title">Water pump</h2>
+      <div class="control-desc">Current relay/pump state reported by the ESP32.</div>
+      <div class="pump-row"><div><div id="pumpText" style="font-size:25px;font-weight:800">--</div><div class="hint">Virtual Pin V12</div></div><button id="pumpSwitch" class="switch" aria-label="Toggle pump" onclick="togglePump()" disabled></button></div>
+      <div id="pumpHelp" class="statusbox">Connect the ESP32 and wait for live status.</div>
+    </article>
+  </section>
+  <div class="footer"><span>Refreshes automatically every 3 seconds</span><span id="updated">Last update: --</span><span id="message"></span></div>
+</div>
+<script>
+let current = {pump:0, mode:"manual"};
+let busy = false;
+const $ = id => document.getElementById(id);
+function setConnection(ok, text){ $("liveDot").classList.toggle("live",ok); $("connection").textContent=text; }
+function showMessage(text, bad=false){ $("message").textContent=text; $("message").className=bad?"error":""; }
+async function api(path, body){
+  const options = body ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)} : {};
+  const r = await fetch(path,options);
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+function render(d){
+  current=d;
+  $("temperature").textContent=Number.isFinite(Number(d.temperature))?Number(d.temperature).toFixed(1):"--";
+  $("humidity").textContent=Number.isFinite(Number(d.humidity))?Math.round(d.humidity):"--";
+  $("moisture").textContent=Number.isFinite(Number(d.moisture))?Math.round(d.moisture):"--";
+  $("humidityBar").style.width=Math.max(0,Math.min(100,Number(d.humidity)||0))+"%";
+  $("moistureBar").style.width=Math.max(0,Math.min(100,Number(d.moisture)||0))+"%";
+  const m=Number(d.moisture);
+  $("soilHint").textContent=!Number.isFinite(m)?"Waiting for sensor data":m<=30?"Soil is dry — watering may be needed":m>=60?"Soil moisture is sufficient":"Soil moisture is moderate";
+  $("manualBtn").classList.toggle("active",d.mode==="manual");
+  $("autoBtn").classList.toggle("active",d.mode==="auto");
+  $("modeLabel").textContent="Mode: "+(d.mode==="auto"?"AUTOMATIC":"MANUAL");
+  $("pumpText").textContent=d.pump?"PUMP ON":"PUMP OFF";
+  $("pumpText").style.color=d.pump?"#54e0a3":"#91a5bf";
+  $("pumpSwitch").classList.toggle("on",!!d.pump);
+  $("pumpSwitch").disabled=busy||d.mode==="auto";
+  $("pumpHelp").textContent=d.mode==="auto"?"Pump is controlled by soil moisture automatically.": "Manual mode: use the switch to turn the pump on or off.";
+  $("updated").textContent="Last update: "+new Date(d.updatedAt||Date.now()).toLocaleTimeString();
+}
+async function refresh(){
+  try { const d=await api("/api/status"); render(d); setConnection(true,"Connected"); }
+  catch(e){ setConnection(false,"Offline / setup needed"); showMessage(e.message,true); }
+}
+async function setMode(mode){
+  if(busy)return; busy=true; showMessage("Updating mode…");
+  try { await api("/api/mode",{mode}); showMessage("Mode updated."); await refresh(); }
+  catch(e){showMessage(e.message,true);}
+  finally{busy=false; $("pumpSwitch").disabled=busy||current.mode==="auto";}
+}
+async function togglePump(){
+  if(busy||current.mode==="auto")return;
+  busy=true; $("pumpSwitch").disabled=true;
+  try { await api("/api/pump",{state:current.pump?0:1}); showMessage("Pump command sent."); await refresh(); }
+  catch(e){showMessage(e.message,true);}
+  finally{busy=false; $("pumpSwitch").disabled=busy||current.mode==="auto";}
+}
+refresh(); setInterval(refresh,3000);
+</script>
+</body>
+</html>
